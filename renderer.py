@@ -1,175 +1,216 @@
-"""Game Engine Renderer. Transforms regular lecture slide data arrays into playable inspection stages."""
+"""Game Engine Renderer. Embeds a fully playable interactive HTML Canvas game block directly into Streamlit."""
 import streamlit as st
-
-CALLOUTS = {"info": st.info, "success": st.success, "warning": st.warning, "error": st.error}
-
-def _text(b, key):
-    st.markdown(f"📜 **Mission Log Context:** *{b['text']}*")
-
-def _heading(b, key):
-    st.markdown(f"### 🛡️ Objective: {b['text']}")
-
-def _bullets(b, key):
-    st.markdown("🔍 **Decoded Manual Data:**")
-    for item in b["items"]:
-        st.markdown(f"🔹 *{item}*")
-
-def _callout(b, key):
-    st.markdown(f"💡 **Intel Data:** `{b['text']}`")
-
-def _cards(b, key):
-    st.markdown("<div style='color: #2563EB; font-weight: bold; font-size: 18px;'>🧩 TASK: Memory Matrix Match</div>", unsafe_allow_html=True)
-    items = b["items"]
-    
-    labels_pool = [item[0] for item in items]
-    correct_matches = 0
-    
-    for idx, (correct_title, description) in enumerate(items):
-        st.markdown(f"📎 **Definition Hint:** *{description}*")
-        guess = st.selectbox("Identify the matching concept component:", ["-- SELECT LABEL --"] + labels_pool, key=f"{key}_card_game_{idx}")
-        if guess == correct_title:
-            correct_matches += 1
-
-    if correct_matches == len(items):
-        st.success("🎯 MATRIX MATCHED COMPLETE! +20 XP UNLOCKED.")
-        if key not in st.session_state.unlocked_stages:
-            st.session_state.game_score += 20
-            st.session_state.unlocked_stages.add(key)
-    else:
-        st.info("🔒 Match all definitions above correctly to clear this matrix node.")
-
-def _tabs(b, key):
-    st.markdown("<div style='color: #D97706; font-weight: bold; font-size: 18px;'>🔓 SYSTEM GATE: Data Verification Code</div>", unsafe_allow_html=True)
-    items = b["items"]
-    
-    titles = [t[0] for t in items]
-    target_select = st.radio("Choose a database file sector to clear:", titles, key=f"{key}_tab_radio")
-    
-    idx = titles.index(target_select)
-    selected_title, original_desc = items[idx]
-    
-    st.markdown(f"⚙️ *Analyzing encrypted architecture definition sector for: `{selected_title}`...*")
-    
-    if "GUI" in selected_title:
-        q = st.selectbox("GUI stands for Graphical User Interface. What core design metric summarizes its primary look?", ["-- Select --", "Command line lines text terminal style code", "Visual elements like windows, menus, icons, and buttons"], key=f"{key}_tab_q_{idx}")
-        success_cond = "Visual elements" in q
-    elif "UI" in selected_title:
-        q = st.selectbox("What components form the complete scope framework of a traditional User Interface?", ["-- Select --", "The hardware processing speeds only", "The set of elements and controls through which a person communicates with a system"], key=f"{key}_tab_q_{idx}")
-        success_cond = "set of elements" in q
-    elif "UX" in selected_title:
-        q = st.selectbox("User Experience (UX) focuses on which phase timeline of the student or user flow?", ["-- Select --", "The broader experience and perceptions before, during, and after interactions", "The database backup compression layout parameters"], key=f"{key}_tab_q_{idx}")
-        success_cond = "broader experience" in q
-    else:
-        q = st.checkbox("Toggle decrypt switch connector matrix parameters", key=f"{key}_tab_q_{idx}")
-        success_cond = q
-
-    if success_cond:
-        st.markdown(f"""
-        <div style="background-color: #ECFDF5; border-left: 5px solid #10B981; padding: 15px; border-radius: 4px; margin-top: 10px;">
-            <b style="color: #047857;">🔓 SECTOR DECRYPTED SUCCESSFUL:</b><br>
-            <p style="color: #065F46; font-style: normal; margin-top: 5px;">{original_desc}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        if f"{key}_tab_clear_{idx}" not in st.session_state.unlocked_stages:
-            st.session_state.game_score += 15
-            st.session_state.unlocked_stages.add(f"{key}_tab_clear_{idx}")
-    else:
-        st.error("🔒 ACCESS DENIED. Select the correct conceptual response to clear this node pipeline.")
-
-def _steps(b, key):
-    st.markdown(f"#### 🪜 Quest Progression Timeline: {b.get('title', 'Steps')}")
-    for idx, (title, description) in enumerate(b["items"], start=1):
-        st.markdown(f"**Stage {idx}: {title}** — *{description}*")
-
-def _compare(b, key):
-    st.markdown("⚖️ **HCI Comparative Analysis Framework:**")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.success(f"**{b['left']['title']}**\n" + "\n".join(f"* {item}" for item in b['left']['items']))
-    with col2:
-        st.error(f"**{b['right']['title']}**\n" + "\n".join(f"* {item}" for item in b['right']['items']))
-
-def _detail(b, key):
-    st.markdown("<div style='color: #DC2626; font-weight: bold; font-size: 18px;'>🚨 HARDWARE REPAIR TERMINAL: Clean the Bugs</div>", unsafe_allow_html=True)
-    names = [d["name"] for d in b["items"]]
-    
-    selected_module = st.selectbox("Choose a lecture section to debug and unlock:", ["-- CHOOSE CORE PRINCIPLE MODULE --"] + names, key=f"{key}_detail_select")
-    
-    if selected_module != "-- CHOOSE CORE PRINCIPLE MODULE --":
-        idx = names.index(selected_module)
-        st.info(f"🛠️ **Diagnostic Bug Scenario Report for: `{selected_module}`**")
-        
-        if "Visibility" in selected_module:
-            ans = st.radio("A system developer hid the main 'Download Admit Card' action inside a nested secondary configuration panel. What design rule failed?", ["Mapping", "Visibility", "Consistency"], key=f"{key}_puz_{idx}")
-            is_valid = (ans == "Visibility")
-        elif "Feedback" in selected_module:
-            ans = st.radio("A student presses 'Submit Assignment', the interface completely freezes without showing any confirmation indicator. What rules fixes this?", ["Feedback", "Simplicity", "Visual size"], key=f"{key}_puz_{idx}")
-            is_valid = (ans == "Feedback")
-        elif "Consistency" in selected_module:
-            ans = st.radio("An LMS names a function 'Gradebook' on one page but renames the same interface table to 'Marks Portal' on another page. What failed?", ["Constraints", "Consistency", "Affordance"], key=f"{key}_puz_{idx}")
-            is_valid = (ans == "Consistency")
-        elif "Simplicity" in selected_module:
-            ans = st.radio("What principle hides advanced configurations until explicitly called by the user?", ["Progressive Disclosure", "System Recall", "Natural Mapping"], key=f"{key}_puz_{idx}")
-            is_valid = (ans == "Progressive Disclosure")
-        elif "Constraints" in selected_module:
-            ans = st.radio("A text input area meant strictly for registration ID numbers lets users enter random letters, causing server crashes. What should be applied?", ["Input Constraints", "System Status Indicators", "Visual contrast"], key=f"{key}_puz_{idx}")
-            is_valid = (ans == "Input Constraints")
-        else:
-            ans = st.checkbox("Override console system locking connectors manually", key=f"{key}_puz_{idx}")
-            is_valid = ans
-
-        if is_valid:
-            st.success("🎉 CORE LAB BUG FIXED! DATA STREAM UNLOCKED.")
-            if f"puz_ok_{idx}" not in st.session_state.unlocked_stages:
-                st.session_state.game_score += 25
-                st.session_state.unlocked_stages.add(f"puz_ok_{idx}")
-            st.markdown("---")
-            render_blocks(b["items"][idx]["blocks"], key=f"{key}_nested_{idx}")
-        else:
-            st.error("🔒 SECURITY FIREWALL BLOCKED: Solve the conceptual bug challenge above to launch the slide insights.")
-
-def _reveal(b, key):
-    st.markdown("### 🎭 Interactive Application Scenarios")
-    for j, (title, context_scenario, expected_fix) in enumerate(b["items"]):
-        with st.expander(f"📋 Mission Target Scenario: {title}"):
-            st.write(context_scenario)
-            user_input = st.text_input("Diagnose and type the solution framework required:", key=f"{key}_rev_input_{j}")
-            if st.button("Submit Diagnostics Log", key=f"{key}_rev_action_{j}"):
-                st.success(f"🔓 Node cleared. Core evaluation criteria: {expected_fix}")
-                if f"rev_node_{j}" not in st.session_state.unlocked_stages:
-                    st.session_state.game_score += 15
-                    st.session_state.unlocked_stages.add(f"rev_node_{j}")
-
-def _discussion(b, key):
-    st.markdown("### 🗣️ Classroom Combat Mode Challenges:")
-    for idx, (question, evaluation_prompt) in enumerate(b["items"], start=1):
-        st.markdown(f"**Question {idx}: {question}**")
-        st.caption(f"🎯 *Inspection Challenge Prompt:* {evaluation_prompt}")
-
-def _answer_box(b, key):
-    st.text_area(b.get("label", "Enter your field research data notes here:"), key=f"{key}_text_game_box")
-
-# Dictionary mapping placed clearly before execution functions run
-RENDERERS = {
-    "text": _text, "heading": _heading, "bullets": _bullets, "callout": _callout,
-    "cards": _cards, "tabs": _tabs, "steps": _steps, "compare": _compare,
-    "detail": _detail, "reveal": _reveal, "discussion": _discussion, "answer_box": _answer_box,
-}
+import streamlit.components.v1 as components
+import json
 
 def render_blocks(blocks, key="b"):
+    # 1. Setup persistent browser state mechanics for scoring metrics
     if "game_score" not in st.session_state:
         st.session_state.game_score = 0
-    if "unlocked_stages" not in st.session_state:
-        st.session_state.unlocked_stages = set()
+    if "cleared_stages" not in st.session_state:
+        st.session_state.cleared_stages = []
 
+    # Calculate current slide context profile
+    slide_title = blocks[0]["text"] if len(blocks) > 0 else "HCI Challenge Module"
+    
+    # 2. Immersive HUD Scoreboard Panel display
     st.markdown(f"""
-    <div style="background-color: #111827; padding: 15px; border-radius: 10px; border: 2px solid #3B82F6; text-align: center; margin-bottom: 25px;">
-        <span style="font-size: 20px; font-weight: bold; color: #38BDF8; font-family: monospace; letter-spacing: 2px;">🕹️ INTRUDER DETECTION SYSTEM ACTIVE</span><br>
-        <span style="font-size: 16px; color: #F3F4F6; font-family: monospace;">CURRENT ACADEMIC SCORE: <b>{st.session_state.game_score} XP</b></span>
+    <div style="background-color: #0F172A; padding: 15px; border-radius: 10px; border: 2px solid #3B82F6; text-align: center; margin-bottom: 20px;">
+        <span style="font-size: 18px; font-weight: bold; color: #38BDF8; font-family: monospace;">🎮 ARCADE FLOW CONTROLLER ACTIVE</span><br>
+        <span style="font-size: 15px; color: #F3F4F6; font-family: monospace;">TOTAL STUDENT ACCOUNT BALANCE: <b>{st.session_state.game_score} XP</b></span>
     </div>
     """, unsafe_allow_html=True)
 
-    for i, block in enumerate(blocks):
-        b_type = block["type"]
-        if b_type in RENDERERS:
-            RENDERERS[b_type](block, f"{key}_{i}")
+    # 3. Comprehensive Pure HTML5 / JavaScript Retro Canvas game script
+    game_html_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ margin: 0; background: #020617; font-family: 'Courier New', monospace; text-align: center; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; }}
+            canvas {{ background: #1e293b; border: 4px solid #3b82f6; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); cursor: pointer; }}
+            #ui-instructions {{ margin-top: 10px; font-size: 14px; color: #94a3b8; max-width: 580px; line-height: 1.4; }}
+        </style>
+    </head>
+    <body>
+        <h4 style="margin: 5px 0; color: #38bdf8;">LEVEL TARGET: {slide_title}</h4>
+        <canvas id="gameCanvas" width="600" height="300"></canvas>
+        <div id="ui-instructions">🎯 <b>How to Play:</b> Use your mouse cursor to click and interact. Drag the natural mapping configuration slider nodes, click invisible button frames to toggle visual highlights, or blast illegal files to keep the system safe!</div>
+
+        <script>
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+            
+            // Game State Machine Variables
+            let levelSolved = false;
+            let currentScore = 0;
+            let sliderX = 150; // Natural mapping game node coordinate tracker
+            let isDragging = false;
+            let invisibleButtonVisible = false;
+
+            // Target Objectives Variables
+            const targetX = 450; 
+
+            // Base Core Loops Engine
+            function gameLoop() {{
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw Grid Lines (Background Environment Matrix)
+                ctx.strokeStyle = "#334155";
+                ctx.lineWidth = 1;
+                for(let i=0; i<canvas.width; i+=40) {{
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+                }}
+                for(let j=0; j<canvas.height; j+=40) {{
+                    ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
+                }}
+
+                // DYNAMIC MISSION DISPATCHER CHANNELS
+                if("{slide_title}".includes("Goals") || "{slide_title}".includes("Visibility")) {{
+                    drawVisibilityMission();
+                }} else if("{slide_title}".includes("LMS") || "{slide_title}".includes("Principles")) {{
+                    drawErrorPreventionMission();
+                }} else {{
+                    drawMappingMission();
+                }}
+
+                if(levelSolved) {{
+                    ctx.fillStyle = "rgba(16, 185, 129, 0.9)";
+                    ctx.fillRect(50, 100, 500, 100);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 20px Courier New";
+                    ctx.fillText("MISSION CLEARED! +25 XP AWARDED", 110, 155);
+                }}
+
+                requestAnimationFrame(gameLoop);
+            }}
+
+            // MISSION 1 ENGINE: Visibility & Signifiers Level
+            function drawVisibilityMission() {{
+                ctx.fillStyle = "#f87171";
+                ctx.font = "14px Courier New";
+                ctx.fillText("BUG ALERT: The Submit button has no visual Signifier!", 30, 40);
+                
+                // Render the broken button based on active state parameters
+                if(!invisibleButtonVisible) {{
+                    ctx.fillStyle = "#334155"; // Gray blending text background box
+                    ctx.fillRect(200, 120, 200, 50);
+                    ctx.fillStyle = "#64748b";
+                    ctx.fillText("Hidden Button Area", 225, 150);
+                }} else {{
+                    ctx.fillStyle = "#2563eb"; // Bright interactive blue
+                    ctx.fillRect(200, 120, 200, 50);
+                    ctx.strokeStyle = "#38bdf8";
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(200, 120, 200, 50);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 16px Courier New";
+                    ctx.fillText("✅ SUBMIT SYSTEM", 225, 150);
+                    if(!levelSolved) triggerWin();
+                }}
+                ctx.fillStyle = "#e2e8f0";
+                ctx.font = "12px Courier New";
+                ctx.fillText("👉 CLICK THE HIDDEN RECTANGLE LAYER TO DEPLOY A SIGNIFIER", 70, 240);
+            }}
+
+            // MISSION 2 ENGINE: Natural Mapping Slider Challenge Level
+            function drawMappingMission() {{
+                ctx.fillStyle = "#38bdf8";
+                ctx.font = "14px Courier New";
+                ctx.fillText("MISSION: Align the physical knob to its target sector layout", 30, 40);
+                
+                // Draw target tracking terminal track
+                ctx.fillStyle = "#475569";
+                ctx.fillRect(100, 150, 400, 10);
+                
+                // Draw validation target zone
+                ctx.fillStyle = "rgba(56, 189, 248, 0.3)";
+                ctx.fillRect(targetX - 25, 130, 50, 50);
+                ctx.fillStyle = "#38bdf8";
+                ctx.fillText("TARGET ZONE", targetX - 45, 120);
+
+                // Draw moveable slider knob element node container
+                ctx.fillStyle = "#ef4444";
+                ctx.beginPath();
+                ctx.arc(sliderX, 155, 15, 0, Math.PI*2);
+                ctx.fill();
+
+                if(Math.abs(sliderX - targetX) < 15 && !levelSolved) triggerWin();
+            }}
+
+            // MISSION 3 ENGINE: Error Prevention Defense Level
+            function drawErrorPreventionMission() {{
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = "14px Courier New";
+                ctx.fillText("CRITICAL REPAIR: Click to block hazardous illegal data packet blocks", 20, 40);
+                
+                ctx.fillStyle = "#ef4444";
+                ctx.fillRect(150, 110, 100, 60);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("MALICIOUS.EXE", 155, 145);
+
+                ctx.fillStyle = "#10b981";
+                ctx.fillRect(350, 110, 100, 60);
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText("PROJECT.PDF", 355, 145);
+                
+                ctx.fillStyle = "#cbd5e1";
+                ctx.font = "12px Courier New";
+                ctx.fillText("👉 ACTION: CLICK ON THE INSECURE FILE FORMAT TO INTERCEPT", 60, 240);
+            }}
+
+            // Mouse Action Handlers Inside Canvas
+            canvas.addEventListener("mousedown", (e) => {{
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                // Hit validation check for Visibility level click
+                if(mouseX >= 200 && mouseX <= 400 && mouseY >= 120 && mouseY <= 170) {{
+                    invisibleButtonVisible = true;
+                }}
+
+                // Hit validation check for Error Prevention challenge blocks
+                if(mouseX >= 150 && mouseX <= 250 && mouseY >= 110 && mouseY <= 170) {{
+                    if(!levelSolved) triggerWin();
+                }}
+
+                // Slider tracking initialization bounds logic
+                if(Math.abs(mouseX - sliderX) < 20 && Math.abs(mouseY - 155) < 20) {{
+                    isDragging = true;
+                }}
+            }});
+
+            canvas.addEventListener("mousemove", (e) => {{
+                if(isDragging) {{
+                    const rect = canvas.getBoundingClientRect();
+                    let mx = e.clientX - rect.left;
+                    if(mx >= 100 && mx <= 500) {{
+                        sliderX = mx;
+                    }}
+                }}
+            }});
+
+            canvas.addEventListener("mouseup", () => {{ isDragging = false; }});
+
+            function triggerWin() {{
+                levelSolved = true;
+                // Dispatch state response telemetry vectors back into the core Streamlit parent backend environment
+                window.parent.postMessage({{type: 'streamlit:setComponentValue', value: 25}}, '*');
+            }}
+
+            gameLoop();
+        </script>
+    </body>
+    </html>
+    """
+
+    # 4. Mount the interactive iframe block bundle inside Streamlit view framework
+    game_response = components.html(game_html_code, height=400, scrolling=False)
+    
+    # 5. Automatically capture game events and increment Python session state values
+    if game_response == 25 and key not in st.session_state.cleared_stages:
+        st.session_state.game_score += 25
+        st.session_state.cleared_stages.append(key)
+        st.rerun()
+
