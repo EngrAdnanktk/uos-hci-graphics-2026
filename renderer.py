@@ -1,170 +1,172 @@
-"""Game-Infused Block Renderer. Turns core lecture content data into playable interface inspection missions."""
+"""Game Engine Renderer. Transforms regular lecture slide data arrays into playable inspection stages."""
 import streamlit as st
 
 CALLOUTS = {"info": st.info, "success": st.success, "warning": st.warning, "error": st.error}
 
 def render_blocks(blocks, key="b"):
-    # Tracking score directly inside Streamlit's state context
+    # Setup global scoring and completion keys
     if "game_score" not in st.session_state:
         st.session_state.game_score = 0
-    if "unlocked_nodes" not in st.session_state:
-        st.session_state.unlocked_nodes = set()
+    if "unlocked_stages" not in st.session_state:
+        st.session_state.unlocked_stages = set()
 
-    # Dynamic Game Dashboard at the top of every section block
+    # Immersive Retro HUD Scoreboard at top of page block
     st.markdown(f"""
-    <div style="background-color: #F3F4F6; padding: 10px; border-radius: 8px; border: 1px solid #D1D5DB; margin-bottom: 15px; text-align: center;">
-        <span style="font-size: 16px; font-weight: bold; color: #1E3A8A;">🎮 HCI LAB SCORE: {st.session_state.game_score} PTS</span>
+    <div style="background-color: #111827; padding: 15px; border-radius: 10px; border: 2px solid #3B82F6; text-align: center; margin-bottom: 25px;">
+        <span style="font-size: 20px; font-weight: bold; color: #38BDF8; font-family: monospace; letter-spacing: 2px;">🕹️ INTRUDER DETECTION SYSTEM ACTIVE</span><br>
+        <span style="font-size: 16px; color: #F3F4F6; font-family: monospace;">CURRENT ACADEMIC SCORE: <b>{st.session_state.game_score} XP</b></span>
     </div>
     """, unsafe_allow_html=True)
 
+    # Step through block data arrays
     for i, block in enumerate(blocks):
-        RENDERERS[block["type"]](block, f"{key}_{i}")
+        b_type = block["type"]
+        if b_type in R_GAME:
+            R_GAME[b_type](block, f"{key}_{i}")
 
 def _text(b, key):
-    st.write(b["text"])
+    # Text behaves as mission background logs
+    st.markdown(f"📜 **Mission Log Context:** *{b['text']}*")
 
 def _heading(b, key):
-    st.markdown(f"### {b['text']}")
+    st.markdown(f"### 🛡️ Objective: {b['text']}")
 
 def _bullets(b, key):
-    st.write("📋 **Review Checklist:**")
+    st.markdown("🔍 **Decoded Manual Data:**")
     for item in b["items"]:
-        st.write(f"* {item}")
+        st.markdown(f"🔹 *{item}*")
 
 def _callout(b, key):
-    CALLOUTS[b.get("kind", "info")](b["text"])
+    # Hide baseline notifications inside game logs
+    st.markdown(f"💡 **Intel Data:** `{b['text']}`")
 
 def _cards(b, key):
-    """Turns standard information cards into a game match puzzle."""
-    if b.get("title"):
-        st.markdown(f"#### 🚨 Mission: Identify the definitions for '{b['title']}'")
-    
+    st.markdown("<div style='color: #2563EB; font-weight: bold; font-size: 18px;'>🧩 TASK: Memory Matrix Match</div>", unsafe_allow_html=True)
     items = b["items"]
-    # Create random decoy selectors out of titles
-    all_titles = [item[0] for item in items]
     
-    n = b.get("cols", 3)
-    cols = st.columns(n)
-    
+    # Generate labels lists
+    labels_pool = [item[0] for item in items]
     correct_matches = 0
-    for i, (correct_title, description) in enumerate(items):
-        with cols[i % n]:
-            st.markdown(f"**Element #{i+1} Definition:**")
-            st.caption(f"*{description}*")
-            user_guess = st.selectbox("Assign correct label:", ["-- Select --"] + all_titles, key=f"{key}_card_{i}")
-            
-            if user_guess == correct_title:
-                st.success(f"✅ Matched: {correct_title}!")
-                correct_matches += 1
-            elif user_guess != "-- Select --":
-                st.error("❌ Mismatched mapping")
+    
+    # Hide true details within form select validations
+    for idx, (correct_title, description) in enumerate(items):
+        st.markdown(f"📎 **Definition Hint:** *{description}*")
+        guess = st.selectbox("Identify the matching concept component:", ["-- SELECT LABEL --"] + labels_pool, key=f"{key}_card_game_{idx}")
+        if guess == correct_title:
+            correct_matches += 1
 
     if correct_matches == len(items):
-        st.balloons()
-        if key not in st.session_state.unlocked_nodes:
+        st.success("🎯 MATRIX MATCHED COMPLETE! +20 XP UNLOCKED.")
+        if key not in st.session_state.unlocked_stages:
             st.session_state.game_score += 20
-            st.session_state.unlocked_nodes.add(key)
+            st.session_state.unlocked_stages.add(key)
+    else:
+        st.info("🔒 Match all definitions above correctly to clear this matrix node.")
 
 def _tabs(b, key):
-    """Turns structural information tabs into verification challenges."""
-    st.markdown("#### ⚡ System Architecture Verification Required")
+    """Intercepts standard tab components and converts them into locked databases."""
+    st.markdown("<div style='color: #D97706; font-weight: bold; font-size: 18px;'>🔓 SYSTEM GATE: Data Verification Code</div>", unsafe_allow_html=True)
     items = b["items"]
     
-    tab_names = [t[0] for t in items]
-    chosen_tab = st.radio("Select an entity element to configure:", tab_names, key=f"{key}_radio")
+    # Present concepts as target questions rather than plaintext slides
+    titles = [t[0] for t in items]
+    target_select = st.radio("Choose a database file sector to clear:", titles, key=f"{key}_tab_radio")
     
-    # Extract match
-    idx = tab_names.index(chosen_tab)
-    correct_title, description = items[idx]
+    # Pull current element row indices tracking selection
+    idx = titles.index(target_select)
+    selected_title, original_desc = items[idx]
     
-    st.info(f"📚 **Lecture Content for {correct_title}:**\n\n{description}")
+    st.markdown(f"⚙️ *Analyzing encrypted architecture definition sector for: `{selected_title}`...*")
     
-    # Mini challenge validation
-    q = st.checkbox(f"I have studied and verified the concept requirements for {correct_title}", key=f"{key}_chk_{idx}")
-    if q:
-        if f"{key}_{idx}" not in st.session_state.unlocked_nodes:
-            st.session_state.game_score += 10
-            st.session_state.unlocked_nodes.add(f"{key}_{idx}")
-            st.rerun()
+    # Interactive multiple choice questions generated on lecture keywords
+    if "GUI" in selected_title:
+        q = st.selectbox("GUI stands for Graphical User Interface. What core design metric summarizes its primary look?", ["-- Select --", "Command line lines text terminal style code", "Visual elements like windows, menus, icons, and buttons"], key=f"{key}_tab_q_{idx}")
+        success_cond = "Visual elements" in q
+    elif "UI" in selected_title:
+        q = st.selectbox("What components form the complete scope framework of a traditional User Interface?", ["-- Select --", "The hardware processing speeds only", "The set of elements and controls through which a person communicates with a system"], key=f"{key}_tab_q_{idx}")
+        success_cond = "set of elements" in q
+    elif "UX" in selected_title:
+        q = st.selectbox("User Experience (UX) focuses on which phase timeline of the student or user flow?", ["-- Select --", "The broader experience and perceptions before, during, and after interactions", "The database backup compression layout parameters"], key=f"{key}_tab_q_{idx}")
+        success_cond = "broader experience" in q
+    else:
+        # Fallback question logic verification for generic tab keys
+        q = st.checkbox("Toggle decrypt switch connector matrix parameters", key=f"{key}_tab_q_{idx}")
+        success_cond = q
+
+    if success_cond:
+        st.markdown(f"""
+        <div style="background-color: #ECFDF5; border-left: 5px solid #10B981; padding: 15px; border-radius: 4px; margin-top: 10px;">
+            <b style="color: #047857;">🔓 SECTOR DECRYPTED SUCCESSFUL:</b><br>
+            <p style="color: #065F46; font-style: normal; margin-top: 5px;">{original_desc}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if f"{key}_tab_clear_{idx}" not in st.session_state.unlocked_stages:
+            st.session_state.game_score += 15
+            st.session_state.unlocked_stages.add(f"{key}_tab_clear_{idx}")
+    else:
+        st.error("🔒 ACCESS DENIED. Select the correct conceptual response to clear this node pipeline.")
 
 def _steps(b, key):
-    if b.get("title"):
-        st.markdown(f"### {b['title']}")
-    for i, (title, text) in enumerate(b["items"], start=1):
-        st.markdown(f"**{i}. {title}**")
-        st.caption(text)
+    st.markdown(f"#### 🪜 Quest Progression Timeline: {b.get('title', 'Steps')}")
+    for idx, (title, description) in enumerate(b["items"], start=1):
+        st.markdown(f"**Stage {idx}: {title}** — *{description}*")
 
 def _compare(b, key):
-    left, right = st.columns(2)
-    for col, side in ((left, b["left"]), (right, b["right"])):
-        with col:
-            CALLOUTS[side.get("kind", "info")](
-                f"**{side['title']}**\n" + "\n".join(f"* {x}" for x in side["items"])
-            )
+    st.markdown("⚖️ **HCI Comparative Analysis Framework:**")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.success(f"**{b['left']['title']}**\n" + "\n".join(f"* {item}" for item in b["left"]["items"]))
+    with col2:
+        st.error(f"**{b['right']['title']}**\n" + "\n".join(f"* {item}" for item in b["right"]["items"]))
 
 def _detail(b, key):
-    """Turns the 10 core principles dropdown index into a diagnostic debugging game."""
+    """Converts the 10 core design principles slide container into a system bug terminal."""
+    st.markdown("<div style='color: #DC2626; font-weight: bold; font-size: 18px;'>🚨 HARDWARE REPAIR TERMINAL: Clean the Bugs</div>", unsafe_allow_html=True)
     names = [d["name"] for d in b["items"]]
     
-    st.markdown("### 🛠️ HCI Bug Laboratory")
-    chosen = st.selectbox(b.get("label", "Choose a module path to debug:"), names, key=f"{key}_sel")
-    idx = names.index(chosen)
+    selected_module = st.selectbox("Choose a lecture section to debug and unlock:", ["-- CHOOSE CORE PRINCIPLE MODULE --"] + names, key=f"{key}_detail_select")
     
-    st.warning(f"🔍 **Mission Challenge:** Inspect the data logic module for **'{chosen}'** below.")
-    
-    # Custom interactive challenge injector built dynamically on item indices
-    if "Visibility" in chosen:
-        q = st.radio("A developer hides the 'Save Profile Changes' button inside an unlabelled drop-down panel. What rule broke?", ["Affordance Mapping", "System Visibility Status", "Visibility"], key=f"{key}_game_{idx}")
-        is_correct = (q == "Visibility")
-    elif "Feedback" in chosen:
-        q = st.radio("A user clicks submit, the site locks up completely, and gives zero updates for 2 minutes. What fixes this?", ["Change font metrics", "Provide meaningful, immediate Feedback alerts", "Delete system path"], key=f"{key}_game_{idx}")
-        is_correct = (q == "Provide meaningful, immediate Feedback alerts")
-    elif "Consistency" in chosen:
-        q = st.radio("A website calls a button 'Sign In' on the main index page, but changes the text string to 'Logon' inside the inner panels. What metric failed?", ["Simplicity models", "Terminology Consistency", "Error Control"], key=f"{key}_game_{idx}")
-        is_correct = (q == "Terminology Consistency")
-    elif "Simplicity" in chosen:
-        q = st.radio("What strategy keeps advanced, low-frequency framework controls out of view until explicitly needed?", ["Progressive Disclosure", "Affordance values", "Recall indices"], key=f"{key}_game_{idx}")
-        is_correct = (q == "Progressive Disclosure")
-    elif "Constraints" in chosen:
-        q = st.radio("How should a date entry form field behave to proactively prevent typing string letters by accident?", ["Apply text constraint rules to intercept illegal inputs", "Show an alert dialog after crashing", "Do nothing"], key=f"{key}_game_{idx}")
-        is_correct = (q == "Apply text constraint rules to intercept illegal inputs")
-    else:
-        # Catch-all backup confirmation condition for other principles
-        q = st.checkbox("Decrypt and launch core lecture slide text variables", key=f"{key}_game_{idx}")
-        is_correct = q
+    if selected_module != "-- CHOOSE CORE PRINCIPLE MODULE --":
+        idx = names.index(selected_module)
+        st.info(f"🛠️ **Diagnostic Bug Scenario Report for: `{selected_module}`**")
         
-    if is_correct:
-        st.success("🎉 Diagnostic Passed! Code Unlocked.")
-        if f"detail_{idx}" not in st.session_state.unlocked_nodes:
-            st.session_state.game_score += 20
-            st.session_state.unlocked_nodes.add(f"detail_{idx}")
-        
-        st.markdown("---")
-        render_blocks(b["items"][idx]["blocks"], key=f"{key}_{idx}")
-    else:
-        st.error("🔒 Framework Locked. Select the correct HCI principle answer to reveal the lecture insights.")
+        # Mini puzzle injector built directly from lecture topics
+        if "Visibility" in selected_module:
+            ans = st.radio("A system developer hid the main 'Download Admit Card' action inside a nested secondary configuration panel. What design rule failed?", ["Mapping", "Visibility", "Consistency"], key=f"{key}_puz_{idx}")
+            is_valid = (ans == "Visibility")
+        elif "Feedback" in selected_module:
+            ans = st.radio("A student presses 'Submit Assignment', the interface completely freezes without showing any confirmation indicator. What rules fixes this?", ["Feedback", "Simplicity", "Visual size"], key=f"{key}_puz_{idx}")
+            is_valid = (ans == "Feedback")
+        elif "Consistency" in selected_module:
+            ans = st.radio("An LMS names a function 'Gradebook' on one page but renames the same interface table to 'Marks Portal' on another page. What failed?", ["Constraints", "Consistency", "Affordance"], key=f"{key}_puz_{idx}")
+            is_valid = (ans == "Consistency")
+        elif "Simplicity" in selected_module:
+            ans = st.radio("What principle hides advanced configurations until explicitly called by the user?", ["Progressive Disclosure", "System Recall", "Natural Mapping"], key=f"{key}_puz_{idx}")
+            is_valid = (ans == "Progressive Disclosure")
+        elif "Constraints" in selected_module:
+            ans = st.radio("A text input area meant strictly for registration ID numbers lets users enter random letters, causing server crashes. What should be applied?", ["Input Constraints", "System Status Indicators", "Visual contrast"], key=f"{key}_puz_{idx}")
+            is_valid = (ans == "Input Constraints")
+        else:
+            ans = st.checkbox("Override console system locking connectors manually", key=f"{key}_puz_{idx}")
+            is_valid = ans
+
+        if is_valid:
+            st.success("🎉 CORE LAB BUG FIXED! DATA STREAM UNLOCKED.")
+            if f"puz_ok_{idx}" not in st.session_state.unlocked_stages:
+                st.session_state.game_score += 25
+                st.session_state.unlocked_stages.add(f"puz_ok_{idx}")
+            st.markdown("---")
+            render_blocks(b["items"][idx]["blocks"], key=f"{key}_nested_{idx}")
+        else:
+            st.error("🔒 SECURITY FIREWALL BLOCKED: Solve the conceptual bug challenge above to launch the slide insights.")
 
 def _reveal(b, key):
-    for j, (title, scenario, answer) in enumerate(b["items"]):
-        with st.expander(title):
-            st.write(scenario)
-            guess = st.text_input("Type your diagnosed fix principle:", key=f"{key}_rev_in_{j}")
-            if st.button("Verify Diagnosis", key=f"{key}_rev_btn_{j}"):
-                st.write(f"💡 **Expected Criteria Includes:** {answer}")
-                if f"rev_{j}" not in st.session_state.unlocked_nodes:
+    st.markdown("### 🎭 Interactive Application Scenarios")
+    for j, (title, context_scenario, expected_fix) in enumerate(b["items"]):
+        with st.expander(f"📋 Mission Target Scenario: {title}"):
+            st.write(context_scenario)
+            user_input = st.text_input("Diagnose and type the solution framework required:", key=f"{key}_rev_input_{j}")
+            if st.button("Submit Diagnostics Log", key=f"{key}_rev_action_{j}"):
+                st.success(f"🔓 Node cleared. Core evaluation criteria: {expected_fix}")
+                if f"rev_node_{j}" not in st.session_state.unlocked_stages:
                     st.session_state.game_score += 15
-                    st.session_state.unlocked_nodes.add(f"rev_{j}")
-
-def _discussion(b, key):
-    for i, (task, prompt) in enumerate(b["items"], start=1):
-        st.markdown(f"**{i:02d}. {task}**")
-        st.caption(prompt)
-
-def _answer_box(b, key):
-    st.text_area(b.get("label", "Your answer (not saved):"), key=f"{key}_ans")
-
-RENDERERS = {
-    "text": _text, "heading": _heading, "bullets": _bullets, "callout": _callout,
-    "cards": _cards, "tabs": _tabs, "steps": _steps, "compare": _compare,
-    "detail": _detail, "reveal": _reveal, "discussion": _discussion, "answer_box": _answer_box,
-}
